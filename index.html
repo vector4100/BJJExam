@@ -23,6 +23,7 @@ body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"
 </head>
 <body>
 <div id="app" class="max-w-3xl mx-auto"></div>
+<div id="rmodal" class="hidden fixed inset-0 z-50 bg-black/60 p-4 overflow-y-auto"><div class="card max-w-md mx-auto my-6 p-5"><h2 class="text-xl font-bold mb-1">Resultado do exame</h2><p class="mut text-sm mb-4">Defina Aprovado ou Reprovado para finalizar.</p><div id="rbody" class="space-y-4"></div><button id="rcancel" class="btn w-full mt-4">Cancelar</button></div></div>
 <div id="modal" class="hidden fixed inset-0 z-50 bg-black/60 p-4 overflow-y-auto">
   <div class="card max-w-xl mx-auto my-6 p-5">
     <h2 class="text-xl font-bold mb-3">Resumo da Avaliação</h2>
@@ -109,7 +110,14 @@ function upCard(f,r){const el=$("c-"+r.ordem);if(el)el.classList.toggle("done",i
 function upBar(a){const s=stats(cur(),a);$("pt"+a).textContent=`${s.d} / ${s.t} concluídos`;$("pp"+a).textContent=s.p+"%";$("pb"+a).style.width=s.p+"%"}
 function upRes(){const f=cur();document.querySelectorAll(".rb").forEach(b=>{const on=S.res[f.faixa+"|"+b.dataset.a]===b.dataset.res,ap=b.dataset.res==="Aprovado",col=ap?"#16a34a":"#dc2626";b.style.background=on?col:"var(--card)";b.style.color=on?"#fff":col;b.style.borderColor=col});idx().forEach(a=>{const s=stats(f,a);$("rp"+a).textContent=`(${s.p}% das técnicas marcadas)`;document.querySelector(`.all[data-a="${a}"]`).textContent=s.d===s.t?"Desmarcar tudo":"Marcar tudo como feito"})}
 
-function summary(){
+function askRes(){const f=cur(),falta=idx().filter(a=>!S.res[f.faixa+"|"+a]);
+  if(!falta.length){$("rmodal").classList.add("hidden");return true}
+  const bt=(a,r,col)=>`<button class="pr rounded-xl py-4 font-extrabold border-2" style="border-color:${col};color:${col};background:var(--card)" data-a="${a}" data-res="${r}">${r}</button>`;
+  $("rbody").innerHTML=falta.map(a=>`<div><div class="font-bold mb-2">${esc(nome(a))}</div><div class="grid grid-cols-2 gap-3">${bt(a,"Aprovado","#16a34a")}${bt(a,"Reprovado","#dc2626")}</div></div>`).join("");
+  $("rbody").onclick=e=>{const b=e.target.closest(".pr");if(!b)return;S.res[cur().faixa+"|"+b.dataset.a]=b.dataset.res;save();upRes();if(askRes())summary()};
+  $("rcancel").onclick=()=>$("rmodal").classList.add("hidden");
+  $("rmodal").classList.remove("hidden");return false}
+function summary(){if(!askRes())return;
   const f=cur(),dt=new Date().toLocaleDateString("pt-BR");
   const blocks=idx().map(a=>{const s=stats(f,a),pend=[];
     f.requisitos.forEach(r=>{const c=getC(f,r,a),m=c.filter(x=>!x).length;if(m)pend.push(`• ${r.descricao}`+(c.length>1?` (${c.length-m}/${c.length})`:""))});
@@ -118,7 +126,7 @@ function summary(){
   const txt=`🥋 *Exame de Graduação – De La Riva Floripa*\nFaixa avaliada: ${f.faixa}\nData: ${dt}\n\n${blocks}`;
   $("sum").textContent=txt;$("wa").href="https://wa.me/?text="+encodeURIComponent(txt);$("modal").classList.remove("hidden");
   $("copy").onclick=async()=>{try{await navigator.clipboard.writeText(txt);$("copy").textContent="Copiado ✓"}catch(e){const r=document.createRange();r.selectNodeContents($("sum"));getSelection().removeAllRanges();getSelection().addRange(r);$("copy").textContent="Selecionado – copie manualmente"}};
-  $("close").onclick=()=>{$("modal").classList.add("hidden");$("copy").textContent="Copiar para WhatsApp"};
+  $("close").onclick=()=>{$("modal").classList.add("hidden");$("copy").textContent="Copiar para WhatsApp";S.alunos=["",""];S.checks={};S.res={};S.faixa=null;save();home();scrollTo(0,0)};
 }
 S.faixa&&cur()?exam():(S.faixa=null,home());
 </script>
