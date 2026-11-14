@@ -35,7 +35,7 @@ body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"
   </div>
 </div>
 <script>
-const R={academia:"Piazza Jiu-Jitsu - Florianópolis",documento:"Requisitos para exames de graduação",faixas:[
+const R={academia:"De La Riva Floripa",documento:"Requisitos para exames de graduação",faixas:[
 {faixa:"Cinza",categoria:"Infantil/Juvenil",idade_requisito:"Até 15 anos e 11 meses",tempo_minimo_treino:"06 meses",r:[["ROLAMENTOS (Frente, lado e costas)","03"],["FUGA DE QUADRIL (Camarão)","01"],["GUARDA FECHADA","01"],["ABERTURA DE GUARDA","01"],["PASSAGEM DE GUARDA","01"],["MATA-LEÃO","01"],["ATAQUE DE GOLA (Estrangulamento)","01"],["CEM QUILOS","01"],["JOELHO NA BARRIGA","01"],["MONTADA","01"],["SAIDA MONTADA","01"],["PEGADA PELAS COSTAS","01"],["AMARRAR A FAIXA E DOBRAR O KIMONO",null]]},
 {faixa:"Amarela",categoria:"Infantil/Juvenil",idade_requisito:"De 07 anos até 15 anos e 11 meses",tempo_minimo_treino:"01 ano na faixa anterior",r:[["ROLAMENTOS (Frente, lado e costas)","03"],["FUGA DE QUADRIL (Camarão)","01"],["ATAQUE NA GUARDA FECHADA","01"],["GUARDA ABERTA","01"],["MEIA GUARDA","01"],["ABERTURA DE GUARDA","01"],["PASSAGEM DE GUARDA","01"],["MATA-LEÃO","01"],["ATAQUE DE GOLA (Estrangulamento)","01"],["CEM QUILOS","01"],["JOELHO NA BARRIGA","01"],["ATAQUE NA MONTADA","01"],["SAIDA MONTADA","01"],["NORTE-SUL","01"],["AMARRAR A FAIXA E DOBRAR O KIMONO",null]]},
 {faixa:"Laranja",categoria:"Infantil/Juvenil",idade_requisito:"De 10 anos até 15 anos e 11 meses",tempo_minimo_treino:"01 ano na faixa anterior",r:[["ROLAMENTOS (Frente, lado e costas)","03"],["FUGA DE QUADRIL (Camarão)","01"],["ATAQUE NA GUARDA FECHADA","01"],["GUARDA ABERTA","01"],["RASPAGEM DE GUARDA ABERTA OU FECHADA","01"],["MEIA GUARDA","01"],["RASPAGEM PARTINDO DA MEIA GUARDA","01"],["ABERTURA DE GUARDA","02"],["PASSAGEM DE GUARDA","02"],["MATA-LEÃO","01"],["ARM-LOCK NA GUARDA e DEFESA","01"],["TRIANGULO e DEFESA","01"],["ATAQUE DE GOLA (Estrangulamento)","02"],["CHAVE AMERICANA","01"],["CHAVE KIMURA","01"],["CEM QUILOS","01"],["SAÍDA DO CEM QUILOS","01"],["JOELHO NA BARRIGA","01"],["SAÍDA DO JOELHO NA BARRIGA","01"],["ATAQUE NA MONTADA","02"],["SAIDA MONTADA","02"],["NORTE-SUL","01"],["SAÍDA DO NORTE-SUL","01"]]},
@@ -52,23 +52,28 @@ const THEME={Cinza:["#6B7280","#fff"],Amarela:["#EAB308","#18181b"],Laranja:["#E
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const nBoxes=r=>{const q=r.quantidade;if(q===null||q==="TODOS")return 1;const n=parseInt(q,10);return n>0?n:1};
-let S={aluno:"",faixa:null,checks:{}}; // checks["faixa|ordem"] = [bool,...]
-try{const s=JSON.parse(localStorage.getItem("exame-v1")||"null");if(s)S=s}catch(e){}
-const save=()=>{try{localStorage.setItem("exame-v1",JSON.stringify(S))}catch(e){}};
+let S={alunos:["",""],dupla:true,faixa:null,checks:{},res:{}};
+try{const s=JSON.parse(localStorage.getItem("exame-v2")||"null");if(s)S=s}catch(e){}
+const save=()=>{try{localStorage.setItem("exame-v2",JSON.stringify(S))}catch(e){}};
 const cur=()=>dadosExame.faixas.find(f=>f.faixa===S.faixa);
-const key=(f,r)=>f.faixa+"|"+r.ordem;
-const getC=(f,r)=>{const k=key(f,r);if(!S.checks[k])S.checks[k]=Array(nBoxes(r)).fill(false);return S.checks[k]};
-function stats(f){let t=0,d=0;f.requisitos.forEach(r=>{const c=getC(f,r);t+=c.length;d+=c.filter(Boolean).length});return{t,d,p:t?Math.round(d/t*100):0}}
+const N=()=>S.dupla?2:1, idx=()=>[...Array(N()).keys()];
+const nome=a=>S.alunos[a].trim()||("Aluno "+(a+1));
+const key=(f,r,a)=>f.faixa+"|"+r.ordem+"|"+a;
+const getC=(f,r,a)=>{const k=key(f,r,a);if(!S.checks[k])S.checks[k]=Array(nBoxes(r)).fill(false);return S.checks[k]};
+function stats(f,a){let t=0,d=0;f.requisitos.forEach(r=>{const c=getC(f,r,a);t+=c.length;d+=c.filter(Boolean).length});return{t,d,p:t?Math.round(d/t*100):0}}
 
 function home(){
+  document.documentElement.style.removeProperty("--c");
   const grp=(cat,title)=>`<h2 class="text-lg font-bold mt-6 mb-3">${title}</h2><div class="grid grid-cols-2 gap-3">`+
    dadosExame.faixas.filter(f=>f.categoria===cat).map(f=>{const[c,t]=THEME[f.faixa];
    return `<button data-faixa="${f.faixa}" class="rounded-2xl p-5 text-left shadow-md active:scale-95 transition" style="background:${c};color:${t};${f.faixa==="Preta"?"box-shadow:inset 0 -6px 0 #dc2626":""}"><div class="text-xl font-extrabold">${f.faixa}</div><div class="text-xs opacity-90 mt-1">${f.requisitos.length} requisitos</div></button>`}).join("")+`</div>`;
-  $("app").innerHTML=`<header class="p-5 pb-2"><h1 class="text-2xl font-extrabold leading-tight">Sistema de Avaliação - Exame de Graduação</h1><p class="mut mt-1">Piazza Jiu-Jitsu - Florianópolis</p>
-  <label class="block mt-5 text-sm font-semibold" for="aluno">Nome do Aluno Avaliado</label>
-  <input id="aluno" class="mt-1 w-full card px-4 py-3 text-base" style="background:var(--card);color:var(--ink)" placeholder="Digite o nome do aluno" value="${esc(S.aluno)}"></header>
+  const inp=a=>`<div class="mt-2"><label class="block text-sm font-semibold" for="al${a}">Nome do Aluno ${a+1}</label><input id="al${a}" data-a="${a}" class="mt-1 w-full card px-4 py-3 text-base" style="background:var(--card);color:var(--ink)" placeholder="Digite o nome" value="${esc(S.alunos[a])}"></div>`;
+  $("app").innerHTML=`<header class="p-5 pb-2"><h1 class="text-2xl font-extrabold leading-tight">Sistema de Avaliação - Exame de Graduação</h1><p class="mut mt-1">De La Riva Floripa</p>
+  <div class="mt-4">${inp(0)}<div id="b2">${S.dupla?inp(1):""}</div></div>
+  <label class="flex items-center gap-2 mt-3 text-sm font-semibold"><input type="checkbox" id="dupla" class="w-5 h-5" ${S.dupla?"checked":""}> Avaliar em dupla</label></header>
   <main class="p-5 pt-0">${grp("Infantil/Juvenil","Infantil / Juvenil")}${grp("Adulto","Adulto")}</main>`;
-  $("aluno").oninput=e=>{S.aluno=e.target.value;save()};
+  document.querySelectorAll("[data-a]").forEach(i=>i.oninput=e=>{S.alunos[+i.dataset.a]=e.target.value;save()});
+  $("dupla").onchange=e=>{S.dupla=e.target.checked;save();home()};
   document.querySelectorAll("[data-faixa]").forEach(b=>b.onclick=()=>{S.faixa=b.dataset.faixa;save();exam();scrollTo(0,0)});
 }
 
@@ -76,32 +81,41 @@ function exam(){
   const f=cur(),[c,t]=THEME[f.faixa],gold=f.faixa==="Preta";
   document.documentElement.style.setProperty("--c",gold?"#b45309":c);document.documentElement.style.setProperty("--t","#fff");
   const cards=f.requisitos.map(r=>{
-    const c2=getC(f,r),todos=r.quantidade==="TODOS";
-    const boxes=c2.map((v,i)=>`<label class="cb"><input type="checkbox" data-k="${key(f,r)}" data-i="${i}" ${v?"checked":""} aria-label="${esc(r.descricao)} ${c2.length>1?i+1:""}"><span>${c2.length>1?i+1:"✓"}</span></label>`).join("");
+    const todos=r.quantidade==="TODOS";
+    const rows=idx().map(a=>{const c2=getC(f,r,a);
+      return `<div class="flex items-center gap-2 flex-wrap">${N()>1?`<span class="text-xs font-bold mut w-16 truncate">${esc(nome(a))}</span>`:""}`+
+      c2.map((v,i)=>`<label class="cb"><input type="checkbox" data-r="${r.ordem}" data-a="${a}" data-i="${i}" ${v?"checked":""} aria-label="${esc(r.descricao)} – ${esc(nome(a))} ${c2.length>1?i+1:""}"><span>${c2.length>1?i+1:"✓"}</span></label>`).join("")+`</div>`}).join("");
     return `<article class="card p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between" id="c-${r.ordem}">
       <div class="flex gap-3 items-start"><span class="mut font-bold text-sm pt-0.5 w-6">${r.ordem}</span><div class="font-semibold leading-snug">${esc(r.descricao)}${todos?' <span class="text-xs font-bold px-2 py-0.5 rounded-full align-middle ml-1" style="background:var(--c);color:var(--t)">TODOS</span>':""}</div></div>
-      <div class="flex gap-2 flex-wrap">${boxes}</div></article>`}).join("");
+      <div class="flex flex-col gap-2">${rows}</div></article>`}).join("");
+  const bars=idx().map(a=>`<div class="mb-1.5"><div class="flex justify-between text-xs font-bold mb-0.5"><span class="truncate">${esc(nome(a))}: <span id="pt${a}"></span></span><span id="pp${a}"></span></div><div class="h-2.5 rounded-full overflow-hidden" style="background:var(--line)"><div id="pb${a}" class="h-full rounded-full transition-all" style="background:${gold?"#d4a017":c};width:0"></div></div></div>`).join("");
+  const resBlk=idx().map(a=>`<div class="card p-4"><div class="font-bold mb-2">${esc(nome(a))} <span class="mut text-sm font-normal" id="rp${a}"></span></div><div class="grid grid-cols-2 gap-3">
+    <button class="rb rounded-xl py-4 font-extrabold border-2" data-a="${a}" data-res="Aprovado">Aprovado</button>
+    <button class="rb rounded-xl py-4 font-extrabold border-2" data-a="${a}" data-res="Reprovado">Reprovado</button></div></div>`).join("");
   $("app").innerHTML=`<header class="p-5 pt-6" style="background:${c};color:${t};${gold?"border-bottom:6px solid #d4a017":""}">
     <div class="flex gap-2 flex-wrap mb-4"><button id="back" class="btn" style="background:rgba(255,255,255,.18);border-color:rgba(128,128,128,.4);color:${t}">← Voltar para Faixas</button><button id="reset" class="btn" style="background:rgba(255,255,255,.18);border-color:rgba(128,128,128,.4);color:${t}">Limpar Avaliação</button></div>
     <h1 class="text-3xl font-extrabold">Faixa ${f.faixa}</h1>
-    <div class="mt-2 text-sm space-y-0.5 opacity-95"><div><b>Categoria:</b> ${f.categoria}</div><div><b>Idade:</b> ${f.idade_requisito}</div><div><b>Tempo mínimo de treino:</b> ${f.tempo_minimo_treino}</div>${S.aluno?`<div><b>Aluno:</b> ${esc(S.aluno)}</div>`:""}</div></header>
-  <div class="sticky top-0 z-20 px-5 py-3 border-b" style="background:var(--bg);border-color:var(--line);padding-top:calc(.75rem + env(safe-area-inset-top,0px))">
-    <div class="flex justify-between text-sm font-bold mb-1"><span id="pt"></span><span id="pp"></span></div>
-    <div class="h-3 rounded-full overflow-hidden" style="background:var(--line)"><div id="pb" class="h-full rounded-full transition-all" style="background:${gold?"#d4a017":c};width:0"></div></div></div>
-  <main class="p-4 space-y-3">${cards}<button id="fin" class="w-full rounded-2xl py-4 text-lg font-extrabold shadow-lg mt-4" style="background:${c};color:${t}">Finalizar e Gerar Resumo</button></main>`;
-  f.requisitos.forEach(upCard.bind(null,f));upBar();
+    <div class="mt-2 text-sm space-y-0.5 opacity-95"><div><b>Categoria:</b> ${f.categoria}</div><div><b>Idade:</b> ${f.idade_requisito}</div><div><b>Tempo mínimo de treino:</b> ${f.tempo_minimo_treino}</div><div><b>Alunos:</b> ${idx().map(a=>esc(nome(a))).join(" e ")}</div></div></header>
+  <div class="sticky top-0 z-20 px-5 py-2 border-b" style="background:var(--bg);border-color:var(--line);padding-top:calc(.5rem + env(safe-area-inset-top,0px))">${bars}</div>
+  <main class="p-4 space-y-3">${cards}<h2 class="text-lg font-bold pt-4">Resultado final</h2>${resBlk}<button id="fin" class="w-full rounded-2xl py-4 text-lg font-extrabold shadow-lg mt-2" style="background:${c};color:${t}">Finalizar e Gerar Resumo</button></main>`;
+  f.requisitos.forEach(r=>upCard(f,r));idx().forEach(upBar);upRes();
   $("back").onclick=()=>{S.faixa=null;save();home()};
-  $("reset").onclick=()=>{if(confirm("Limpar todas as marcações desta faixa?")){f.requisitos.forEach(r=>delete S.checks[key(f,r)]);save();exam()}};
+  $("reset").onclick=()=>{if(confirm("Limpar todas as marcações e resultados desta faixa?")){[0,1].forEach(a=>{f.requisitos.forEach(r=>delete S.checks[key(f,r,a)]);delete S.res[f.faixa+"|"+a]});save();exam()}};
   $("fin").onclick=summary;
-  $("app").onchange=e=>{const i=e.target;if(!i.dataset.k)return;const o=parseInt(i.dataset.k.split("|")[1],10),r=f.requisitos.find(x=>x.ordem===o);getC(f,r)[+i.dataset.i]=i.checked;save();upCard(f,r);upBar()};
+  $("app").onchange=e=>{const i=e.target;if(i.dataset.r===undefined)return;const r=f.requisitos.find(x=>x.ordem==i.dataset.r),a=+i.dataset.a;getC(f,r,a)[+i.dataset.i]=i.checked;save();upCard(f,r);upBar(a)};
+  $("app").onclick=e=>{const b=e.target.closest(".rb");if(!b)return;const k=f.faixa+"|"+b.dataset.a;S.res[k]=S.res[k]===b.dataset.res?null:b.dataset.res;save();upRes()};
 }
-function upCard(f,r){const el=$("c-"+r.ordem);if(el)el.classList.toggle("done",getC(f,r).every(Boolean))}
-function upBar(){const f=cur(),s=stats(f);$("pt").textContent=`${s.d} / ${s.t} concluídos`;$("pp").textContent=s.p+"%";$("pb").style.width=s.p+"%"}
+function upCard(f,r){const el=$("c-"+r.ordem);if(el)el.classList.toggle("done",idx().every(a=>getC(f,r,a).every(Boolean)))}
+function upBar(a){const s=stats(cur(),a);$("pt"+a).textContent=`${s.d} / ${s.t} concluídos`;$("pp"+a).textContent=s.p+"%";$("pb"+a).style.width=s.p+"%"}
+function upRes(){const f=cur();document.querySelectorAll(".rb").forEach(b=>{const on=S.res[f.faixa+"|"+b.dataset.a]===b.dataset.res,ap=b.dataset.res==="Aprovado",col=ap?"#16a34a":"#dc2626";b.style.background=on?col:"var(--card)";b.style.color=on?"#fff":col;b.style.borderColor=col});idx().forEach(a=>{const s=stats(f,a);$("rp"+a).textContent=`(${s.p}% das técnicas marcadas)`})}
 
 function summary(){
-  const f=cur(),s=stats(f),pend=[];
-  f.requisitos.forEach(r=>{const c=getC(f,r),m=c.filter(x=>!x).length;if(m)pend.push(`• ${r.descricao}`+(c.length>1?` (${c.length-m}/${c.length})`:""))});
-  const txt=`🥋 *Exame de Graduação – De La Riva Floripa*\nAluno: ${S.aluno||"(não informado)"}\nFaixa avaliada: ${f.faixa}\nData: ${new Date().toLocaleDateString("pt-BR")}\nAproveitamento: ${s.p}% (${s.d}/${s.t})\n\n`+(pend.length?`Pendências:\n${pend.join("\n")}`:"✅ Nenhuma pendência. Todos os itens concluídos!");
+  const f=cur(),dt=new Date().toLocaleDateString("pt-BR");
+  const blocks=idx().map(a=>{const s=stats(f,a),pend=[];
+    f.requisitos.forEach(r=>{const c=getC(f,r,a),m=c.filter(x=>!x).length;if(m)pend.push(`• ${r.descricao}`+(c.length>1?` (${c.length-m}/${c.length})`:""))});
+    const res=S.res[f.faixa+"|"+a];
+    return `*${nome(a)}*\nResultado: ${res==="Aprovado"?"✅ APROVADO":res==="Reprovado"?"❌ REPROVADO":"não definido"}\nTécnicas marcadas: ${s.p}% (${s.d}/${s.t})\n`+(pend.length?`Pendências:\n${pend.join("\n")}`:"Nenhuma pendência.")}).join("\n\n――――――――\n\n");
+  const txt=`🥋 *Exame de Graduação – De La Riva Floripa*\nFaixa avaliada: ${f.faixa}\nData: ${dt}\n\n${blocks}`;
   $("sum").textContent=txt;$("wa").href="https://wa.me/?text="+encodeURIComponent(txt);$("modal").classList.remove("hidden");
   $("copy").onclick=async()=>{try{await navigator.clipboard.writeText(txt);$("copy").textContent="Copiado ✓"}catch(e){const r=document.createRange();r.selectNodeContents($("sum"));getSelection().removeAllRanges();getSelection().addRange(r);$("copy").textContent="Selecionado – copie manualmente"}};
   $("close").onclick=()=>{$("modal").classList.add("hidden");$("copy").textContent="Copiar para WhatsApp"};
