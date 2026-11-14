@@ -64,7 +64,7 @@ function home(){
   const grp=(cat,title)=>`<h2 class="text-lg font-bold mt-6 mb-3">${title}</h2><div class="grid grid-cols-2 gap-3">`+
    dadosExame.faixas.filter(f=>f.categoria===cat).map(f=>{const[c,t]=THEME[f.faixa];
    return `<button data-faixa="${f.faixa}" class="rounded-2xl p-5 text-left shadow-md active:scale-95 transition" style="background:${c};color:${t};${f.faixa==="Preta"?"box-shadow:inset 0 -6px 0 #dc2626":""}"><div class="text-xl font-extrabold">${f.faixa}</div><div class="text-xs opacity-90 mt-1">${f.requisitos.length} requisitos</div></button>`}).join("")+`</div>`;
-  $("app").innerHTML=`<header class="p-5 pb-2"><h1 class="text-2xl font-extrabold leading-tight">Sistema de Avaliação - Exame de Graduação</h1><p class="mut mt-1">De La Riva Floripa - Professor Wado</p>
+  $("app").innerHTML=`<header class="p-5 pb-2"><h1 class="text-2xl font-extrabold leading-tight">Sistema de Avaliação - Exame de Graduação</h1><p class="mut mt-1">Piazza Jiu-Jitsu - Florianópolis</p>
   <label class="block mt-5 text-sm font-semibold" for="aluno">Nome do Aluno Avaliado</label>
   <input id="aluno" class="mt-1 w-full card px-4 py-3 text-base" style="background:var(--card);color:var(--ink)" placeholder="Digite o nome do aluno" value="${esc(S.aluno)}"></header>
   <main class="p-5 pt-0">${grp("Infantil/Juvenil","Infantil / Juvenil")}${grp("Adulto","Adulto")}</main>`;
