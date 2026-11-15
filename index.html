@@ -23,6 +23,7 @@ body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"
 </head>
 <body>
 <div id="app" class="max-w-3xl mx-auto"></div>
+<div id="pmodal" class="hidden fixed inset-0 z-50 bg-black/60 p-4 overflow-y-auto"><div class="card max-w-xs mx-auto my-16 p-5"><h2 class="text-xl font-bold mb-1">Faixa Preta</h2><p class="mut text-sm mb-3">Digite a senha para acessar.</p><div id="dots" class="flex justify-center gap-4 my-5"><i class="w-4 h-4 rounded-full border-2" style="border-color:var(--mut)"></i><i class="w-4 h-4 rounded-full border-2" style="border-color:var(--mut)"></i><i class="w-4 h-4 rounded-full border-2" style="border-color:var(--mut)"></i><i class="w-4 h-4 rounded-full border-2" style="border-color:var(--mut)"></i></div><p id="perr" class="text-sm font-semibold mt-2 hidden" style="color:#dc2626">Senha incorreta.</p><div id="pad" class="grid grid-cols-3 gap-3 mt-4"><button class="pk btn text-2xl font-bold py-4" data-k="1">1</button><button class="pk btn text-2xl font-bold py-4" data-k="2">2</button><button class="pk btn text-2xl font-bold py-4" data-k="3">3</button><button class="pk btn text-2xl font-bold py-4" data-k="4">4</button><button class="pk btn text-2xl font-bold py-4" data-k="5">5</button><button class="pk btn text-2xl font-bold py-4" data-k="6">6</button><button class="pk btn text-2xl font-bold py-4" data-k="7">7</button><button class="pk btn text-2xl font-bold py-4" data-k="8">8</button><button class="pk btn text-2xl font-bold py-4" data-k="9">9</button><button id="pcancel" class="btn text-sm">Cancelar</button><button class="pk btn text-2xl font-bold py-4" data-k="0">0</button><button class="pk btn text-2xl py-4" data-k="del" aria-label="Apagar">⌫</button></div></div></div>
 <div id="rmodal" class="hidden fixed inset-0 z-50 bg-black/60 p-4 overflow-y-auto"><div class="card max-w-md mx-auto my-6 p-5"><h2 class="text-xl font-bold mb-1">Resultado do exame</h2><p class="mut text-sm mb-4">Defina Aprovado ou Reprovado para finalizar.</p><div id="rbody" class="space-y-4"></div><button id="rcancel" class="btn w-full mt-4">Cancelar</button></div></div>
 <div id="modal" class="hidden fixed inset-0 z-50 bg-black/60 p-4 overflow-y-auto">
   <div class="card max-w-xl mx-auto my-6 p-5">
@@ -78,9 +79,18 @@ function home(){
   <main class="p-5 pt-0">${grp("Infantil/Juvenil","Infantil / Juvenil")}${grp("Adulto","Adulto")}</main>`;
   document.querySelectorAll("[data-a]").forEach(i=>i.oninput=e=>{S.alunos[+i.dataset.a]=e.target.value;save()});
   $("dupla").onchange=e=>{S.dupla=e.target.checked;save();home()};
-  document.querySelectorAll("[data-faixa]").forEach(b=>b.onclick=()=>{S.faixa=b.dataset.faixa;save();exam();scrollTo(0,0)});
+  const go=n=>{S.faixa=n;save();exam();scrollTo(0,0)};
+  document.querySelectorAll("[data-faixa]").forEach(b=>b.onclick=()=>{const n=b.dataset.faixa;if(n!=="Preta"||S.pretaOk)return go(n);askPin(()=>{S.pretaOk=true;go(n)})});
 }
 
+function askPin(ok){const m=$("pmodal");let v="";const dots=[...document.querySelectorAll("#dots i")];
+  const draw=()=>dots.forEach((d,k)=>d.style.background=k<v.length?"var(--ink)":"transparent");
+  draw();$("perr").classList.add("hidden");m.classList.remove("hidden");
+  $("pad").onclick=e=>{const b=e.target.closest(".pk");if(!b)return;const k=b.dataset.k;
+    if(k==="del")v=v.slice(0,-1);else if(v.length<4)v+=k;
+    $("perr").classList.add("hidden");draw();
+    if(v.length===4){if(v==="2026"){m.classList.add("hidden");ok()}else{$("perr").classList.remove("hidden");setTimeout(()=>{v="";draw()},350)}}};
+  $("pcancel").onclick=()=>m.classList.add("hidden")}
 function exam(){
   const f=cur(),[c,t]=THEME[f.faixa],gold=f.faixa==="Preta";
   document.documentElement.style.setProperty("--c",gold?"#b45309":c);document.documentElement.style.setProperty("--t","#fff");
@@ -106,7 +116,7 @@ function exam(){
   <div class="sticky top-0 z-20 px-5 py-2 border-b" style="background:var(--bg);border-color:var(--line);padding-top:calc(.5rem + env(safe-area-inset-top,0px))">${bars}</div>
   <main class="p-4 space-y-3">${cards}<h2 class="text-lg font-bold pt-4">Resultado final</h2>${resBlk}<button id="fin" class="w-full rounded-2xl py-4 text-lg font-extrabold shadow-lg mt-2" style="background:${c};color:${t}">Finalizar e Gerar Resumo</button></main>`;
   all(f).forEach(r=>upCard(f,r));idx().forEach(upBar);upRes();ses=0;showSes();
-  $("back").onclick=()=>{S.faixa=null;save();home()};
+  $("back").onclick=()=>{S.faixa=null;S.pretaOk=false;save();home()};
   $("reset").onclick=()=>{if(confirm("Limpar todas as marcações e resultados desta faixa?")){[0,1].forEach(a=>{all(f).forEach(r=>delete S.checks[key(f,r,a)]);delete S.res[f.faixa+"|"+a]});save();exam()}};
   $("fin").onclick=summary;
   $("app").onchange=e=>{const i=e.target;if(i.dataset.r===undefined)return;const r=all(f).find(x=>x.ordem==i.dataset.r),a=+i.dataset.a;getC(f,r,a)[+i.dataset.i]=i.checked;save();upCard(f,r);upBar(a)};
@@ -133,9 +143,9 @@ function summary(){if(!askRes())return;
   const txt=`🥋 *Exame de Graduação – De La Riva Floripa*\nFaixa avaliada: ${f.faixa}\nData: ${dt}\n\n${blocks}`;
   $("sum").textContent=txt;$("wa").href="https://wa.me/?text="+encodeURIComponent(txt);$("modal").classList.remove("hidden");
   $("copy").onclick=async()=>{try{await navigator.clipboard.writeText(txt);$("copy").textContent="Copiado ✓"}catch(e){const r=document.createRange();r.selectNodeContents($("sum"));getSelection().removeAllRanges();getSelection().addRange(r);$("copy").textContent="Selecionado – copie manualmente"}};
-  $("close").onclick=()=>{$("modal").classList.add("hidden");$("copy").textContent="Copiar para WhatsApp";S.alunos=["",""];S.checks={};S.res={};S.faixa=null;save();home();scrollTo(0,0)};
+  $("close").onclick=()=>{$("modal").classList.add("hidden");$("copy").textContent="Copiar para WhatsApp";S.alunos=["",""];S.checks={};S.res={};S.faixa=null;S.pretaOk=false;save();home();scrollTo(0,0)};
 }
-S.faixa&&cur()?exam():(S.faixa=null,home());
+S.faixa&&cur()&&(S.faixa!=="Preta"||S.pretaOk)?exam():(S.faixa=null,home());
 </script>
 </body>
 </html>
